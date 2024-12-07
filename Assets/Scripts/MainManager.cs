@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -12,20 +13,27 @@ public class MainManager : MonoBehaviour
 
     public Text ScoreText;
     public GameObject GameOverText;
-    
+    public Text BestScoreText;
+
     private bool m_Started = false;
     private int m_Points;
-    
-    private bool m_GameOver = false;
 
-    
+    private bool m_GameOver = false;
+    [SerializeField] private highscores highscores;
+    public UnityEvent onGameOver;
+
+
+
+
     // Start is called before the first frame update
     void Start()
     {
+        BestScoreText.text = $"Best score: {GameManager.Instance.highScorePlayer} : {GameManager.Instance.highScore}";
+
         const float step = 0.6f;
         int perLine = Mathf.FloorToInt(4.0f / step);
-        
-        int[] pointCountArray = new [] {1,1,2,2,5,5};
+
+        int[] pointCountArray = new[] { 1, 1, 2, 2, 5, 5 };
         for (int i = 0; i < LineCount; ++i)
         {
             for (int x = 0; x < perLine; ++x)
@@ -59,7 +67,24 @@ public class MainManager : MonoBehaviour
             {
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
             }
+            else if(Input.GetKeyDown(KeyCode.Escape)){
+                GameManager.Instance.SaveHighScore();
+                SceneManager.LoadScene(0);
+            }
         }
+
+        HighScoreCheck();
+    }
+
+    private void HighScoreCheck()
+    {
+        if (m_Points > GameManager.Instance.highScore)
+        {
+            GameManager.Instance.highScore = m_Points;
+            GameManager.Instance.highScorePlayer = GameManager.Instance.playerName;
+            BestScoreText.text = $"Best score: {GameManager.Instance.highScorePlayer} : {GameManager.Instance.highScore}";
+        }
+        GameManager.Instance.score = m_Points;
     }
 
     void AddPoint(int point)
@@ -69,8 +94,28 @@ public class MainManager : MonoBehaviour
     }
 
     public void GameOver()
-    {
+    {   
+        CheckHighscore();
+
+        GameManager.Instance.SaveHighScore();
+
         m_GameOver = true;
         GameOverText.SetActive(true);
+    }
+
+    private void Exit(){
+        GameManager.Instance.SaveHighScore();
+        Application.Quit();
+    }
+
+    public void CheckHighscore(){
+        if(GameManager.Instance.highscoresDictonary.ContainsKey(GameManager.Instance.playerName)){
+            if(GameManager.Instance.highscoresDictonary[GameManager.Instance.playerName] < GameManager.Instance.score){
+                GameManager.Instance.highscoresDictonary[GameManager.Instance.playerName] = GameManager.Instance.score;
+            }
+        }
+        else{
+            GameManager.Instance.highscoresDictonary.Add(GameManager.Instance.playerName, GameManager.Instance.score);
+        }
     }
 }
